@@ -1,0 +1,83 @@
+services:
+
+  stan:
+    image: madzone/php83-app-2024:octane
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.octane
+      args:
+        PHP_VERSION: '8.3-bullseye'
+    ports:
+      - "8081:80" #http
+      - "443:443" #https
+    depends_on:
+        - redis
+    networks:
+        - laravel
+
+  # mariadb:
+  #   image: mariadb:latest
+  #   restart: unless-stopped
+  #   environment:
+  #     MYSQL_DATABASE: deepdefense2
+  #     MYSQL_ROOT_PASSWORD: root
+  #     MYSQL_PASSWORD: root
+  #     MYSQL_USER: root
+  #   volumes:
+  #     - ./.docker/mariadb/dbdata:/var/lib/mysql
+  #   ports:
+  #     - "3388:3306"
+  #   networks:
+  #     - laravel      
+
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - ping
+      retries: 3
+      timeout: 5s
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 200M
+        reservations:
+          cpus: "0.1"
+          memory: 20M
+      restart_policy:
+        condition: on-failure
+    networks:
+      - laravel 
+
+  search:
+    container_name: elasticsearch_search
+    image: elasticsearch:7.17.15
+    ports:
+      - 9200:9200
+    environment:
+      - discovery.type=single-node
+      # - ES_JAVA_OPTS=-Xms4g -Xmx4g
+    networks:
+      - laravel
+
+  # kibana:
+  #   image: kibana:7.17.15
+  #   ports:
+  #     - "5601:5601"
+  #   environment:
+  #     ELASTICSEARCH_HOSTS: "http://search:9200"
+  #   networks:
+  #     - laravel
+networks:
+    laravel:
+        driver: bridge
+
+volumes:
+  esdata:
+    driver: local                
