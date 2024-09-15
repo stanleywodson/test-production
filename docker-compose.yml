@@ -1,7 +1,7 @@
 services:
 
   stan:
-    image: madzone/php83-app-2024:octane
+    #image: madzone/php83-app-2024:octane
     build:
       context: .
       dockerfile: ./docker/Dockerfile.octane
