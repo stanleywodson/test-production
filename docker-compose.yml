@@ -1,6 +1,5 @@
 services:
-
-  stan:
+  app:
     image: madzone/ironfence-app:v1
     build:
       context: .
@@ -8,76 +7,69 @@ services:
       args:
         PHP_VERSION: '8.3-zts-bullseye'
     ports:
-      - "80:80" #http
-      - "443:443" #https
+      - "80:80"  # HTTP
+      - "443:443"  # HTTPS
     depends_on:
-        - redis
+      - redis
+      # - search
     networks:
-        - laravel
-
-  # mariadb:
-  #   image: mariadb:latest
-  #   restart: unless-stopped
-  #   environment:
-  #     MYSQL_DATABASE: deepdefense2
-  #     MYSQL_ROOT_PASSWORD: root
-  #     MYSQL_PASSWORD: root
-  #     MYSQL_USER: root
-  #   volumes:
-  #     - ./.docker/mariadb/dbdata:/var/lib/mysql
-  #   ports:
-  #     - "3388:3306"
-  #   networks:
-  #     - laravel      
+      - ironfence_network
 
   redis:
-    image: "redis:alpine"
+    image: redis:alpine
     ports:
       - "6379:6379"
     healthcheck:
-      test:
-        - CMD
-        - redis-cli
-        - ping
+      test: ["CMD", "redis-cli", "ping"]
       retries: 3
       timeout: 5s
-    deploy:
-      replicas: 1
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 200M
-        reservations:
-          cpus: "0.1"
-          memory: 20M
-      restart_policy:
-        condition: on-failure
+    volumes:
+      - redisdata:/data  
     networks:
-      - laravel 
+      - ironfence_network
 
   search:
     container_name: elasticsearch_search
     image: elasticsearch:7.17.15
     ports:
-      - 9200:9200
+      - "9200:9200"
     environment:
       - discovery.type=single-node
-      # - ES_JAVA_OPTS=-Xms4g -Xmx4g
     networks:
-      - laravel
+      - ironfence_network
 
-  # kibana:
-  #   image: kibana:7.17.15
-  #   ports:
-  #     - "5601:5601"
-  #   environment:
-  #     ELASTICSEARCH_HOSTS: "http://search:9200"
-  #   networks:
-  #     - laravel
+# Se necessário, descomente e configure os serviços MariaDB e Kibana
+
+# mariadb:
+#   image: mariadb:latest
+#   restart: unless-stopped
+#   environment:
+#     MYSQL_DATABASE: deepdefense2
+#     MYSQL_ROOT_PASSWORD: root
+#     MYSQL_PASSWORD: root
+#     MYSQL_USER: root
+#   volumes:
+#     - ./.docker/mariadb/dbdata:/var/lib/mysql
+#   ports:
+#     - "3306:3306"
+#   networks:
+#     - ironfence_network
+
+# kibana:
+#   image: kibana:7.17.15
+#   ports:
+#     - "5601:5601"
+#   environment:
+#     ELASTICSEARCH_HOSTS: "http://search:9200"
+#   networks:
+#     - ironfence_network
+
 networks:
-    laravel:
-        driver: bridge
+  ironfence_network:
+    driver: bridge
 
 volumes:
+  redisdata:
+    driver: local
   esdata:
-    driver: local                
+    driver: local
