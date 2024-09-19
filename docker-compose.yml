@@ -1,8 +1,8 @@
 version: '3.9'
-
 services:
-  stan:
+  app:
     image: madzone/ironfence-app:v1
+    container_name: web-ironfence
     build:
       context: .
       dockerfile: ./docker/Dockerfile.octane
@@ -13,7 +13,6 @@ services:
       - "443:443"  # HTTPS
     depends_on:
       - redis
-      - search
     networks:
       - laravel
 
